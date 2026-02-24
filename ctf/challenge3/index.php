@@ -74,7 +74,7 @@ if($p_key!=null){
 	<?php print $e_message;
 		if(isset($decrypt))
 			print($decrypt); ?>
-	<form action="<?php print $_SERVER['PHP_SELF'] ?>" method="POST">
+	<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']); ?>" method="POST">
 		<input type="text" name="password" value="<?php print htmlentities($p_key) ?>" />
 		<input type="submit" value="Decrypt" />
 	</body>

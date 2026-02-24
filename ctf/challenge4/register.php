@@ -24,14 +24,17 @@ if(isset($_POST['username']) && isset($_POST['password']) && isset($_POST['email
 	$password = md5($_POST['password']);
 	$email = htmlentities($_POST['email']);
 	
-	$sql_check_user = "SELECT * FROM challenge4_users WHERE username='$username'";
-	$query_check_user = mysql_query($sql_check_user) or die(mysql_error());
+	$safe_username = mysql_real_escape_string($username);
+	$safe_password = mysql_real_escape_string($password);
+	$safe_email = mysql_real_escape_string($email);
+	$sql_check_user = "SELECT * FROM challenge4_users WHERE username='$safe_username'";
+	$query_check_user = mysql_query($sql_check_user) or die("Database error");
 	if(mysql_num_rows($query_check_user) > 0)
 		$message = "Username already exisits";
 	else{
 		$sql_insert_user = "INSERT INTO challenge4_users (username, password, email)
-									VALUES('$username', '$password', '$email')";
-		$query_insert_user = mysql_query($sql_insert_user) or die(mysql_error());
+									VALUES('$safe_username', '$safe_password', '$safe_email')";
+		$query_insert_user = mysql_query($sql_insert_user) or die("Database error");
 		if($query_insert_user)
 			$message = "Registration successful, you may now <a href=\"./index.php\">login</a>.";
 	}
@@ -46,7 +49,7 @@ if(isset($_POST['username']) && isset($_POST['password']) && isset($_POST['email
 		<?php print @$message; ?>
 		<br />
 		<br />
-		<form action="<?php print $_SERVER['PHP_SELF']; ?>" method="POST">
+		<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']); ?>" method="POST">
 			<fieldset style="width:250px">
 				<legend>Enter your details</legend>
 				<label>Username:</label><br />

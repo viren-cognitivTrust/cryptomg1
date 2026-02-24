@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 include "../../includes/init.php";
 include "db.php";
 if(@$_GET['a'] == "logout"){
-	setcookie("authtoken", "", 1);
+	setcookie("authtoken", "", 1, '/', '', false, true);
 	header("Location: index.php");
 	die();
 }
@@ -35,14 +35,15 @@ function checkAuth($username, $password){
 		$GLOBALS['username2'] = $info[2];
 		return true;
 	}else{
-		$sql_check_auth = "SELECT * FROM challenge4_users WHERE username='$username'";
-		$query_check_auth = mysql_query($sql_check_auth) or die(mysql_error());
+		$safe_username = mysql_real_escape_string($username);
+		$sql_check_auth = "SELECT * FROM challenge4_users WHERE username='$safe_username'";
+		$query_check_auth = mysql_query($sql_check_auth) or die("Database error");
 		if(mysql_num_rows($query_check_auth)){
 			$result = mysql_fetch_array($query_check_auth);
 			if($result['password'] == $password){
 				$authtoken = $result['id']."|".$result['email']."|".$result['username'];
 				$GLOBALS['username2'] = $result['username'];
-				setcookie("authtoken", encode(encrypt($authtoken, $GLOBALS['cipher'], $GLOBALS['mode'], $GLOBALS['key'], $GLOBALS['iv']), 2));
+				setcookie("authtoken", encode(encrypt($authtoken, $GLOBALS['cipher'], $GLOBALS['mode'], $GLOBALS['key'], $GLOBALS['iv']), 2), 0, '/', '', false, true);
 				return true;
 			}else return false;
 		}
@@ -50,7 +51,7 @@ function checkAuth($username, $password){
 }
 $auth = checkAuth(htmlentities(@$_POST['username']), md5(@$_POST['password']));
 if($auth){
-		$message = "Welcome, $username2";
+		$message = "Welcome, ".htmlspecialchars($username2);
 }
 elseif(isset($_POST['username'])){
 	$message = "Wrong username or password";
@@ -67,7 +68,7 @@ elseif(isset($_POST['username'])){
 		<br />
 		<?php print @$message;
 		if(!$auth){ ?>
-		<form action="<?php print $_SERVER['PHP_SELF'];?>" method="POST">
+		<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']);?>" method="POST">
 			<fieldset style="width:250px">
 				<legend>Login</legend>
 				<label>Username:</label><br />
