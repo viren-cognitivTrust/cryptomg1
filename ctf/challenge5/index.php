@@ -27,16 +27,30 @@ $title = '';
 $secret = 'ThisisMYl0ng4ndh5rd2gues%sSekrett!';
 
 if(isset($_GET['algo'])){
-	$algo = $_GET['algo'];
+	$allowed_algos = array('md4', 'md5', 'ripemd160', 'sha1', 'sha256', 'sha512', 'whirlpool');
+	if(in_array($_GET['algo'], $allowed_algos)) {
+		$algo = $_GET['algo'];
+	} else {
+		$algo = 'md5';
+	}
 }
 
 if(isset($_GET['file']) and isset($_GET['hash'])){
-	if(hash($algo,$secret.$_GET['file'])==$_GET['hash']){
-		$fileToGet = $directory."/".$_GET['file'];
-		//Ugly hack to get this to work in PHP when it shouldn't due to null bytes. I feel dirty. (DC)
+	if(hash($algo,$secret.$_GET['file'])===$_GET['hash']){
+		$fileToGet = $directory."/".basename($_GET['file']);
+		// Remove null bytes to prevent null byte injection
 		$fileToGet = str_replace("\0",'',$fileToGet);
-		$theData = nl2br(file_get_contents($fileToGet));
-		$title = $_GET['file'];
+		// Validate resolved path is within allowed directory
+		$realPath = realpath($fileToGet);
+		$allowedDir = realpath($directory);
+		if($realPath && $allowedDir && strpos($realPath, $allowedDir) === 0 && !is_dir($realPath)){
+			$theData = nl2br(htmlspecialchars(file_get_contents($realPath)));
+			$title = htmlspecialchars($_GET['file']);
+		} else {
+			header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+			$title = "File not found";
+			$header = $title;
+		}
 	}
 	else{
 		header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found"); 
@@ -55,7 +69,7 @@ if(isset($_GET['file']) and isset($_GET['hash'])){
 	</head>
 	<body>
 		<div id="settings">
-			<form action="<?php print $_SERVER['PHP_SELF']?>" method="GET">
+			<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']);?>" method="GET">
 				<label>Algorithm:</label>
 				<select name="algo">
 			<option value="md4">md4</option>
@@ -76,8 +90,8 @@ if(isset($_GET['file']) and isset($_GET['hash'])){
 				$url = "";
 				$fileName = basename($file);
 				if(isset($_GET['algo']))
-					$url .= "algo=".$_GET['algo'];
-				print "<li><a href=\"?$url&file=".$fileName."&hash=".hash($algo,$secret.$fileName)."\">".$fileName."</a></li>";
+					$url .= "algo=".urlencode($_GET['algo']);
+				print "<li><a href=\"?$url&file=".urlencode($fileName)."&hash=".hash($algo,$secret.$fileName)."\">".$fileName."</a></li>";
 			}
 			?>
 			</ul>

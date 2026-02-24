@@ -50,7 +50,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			<br />
 			<br />
 			<div id="settings">
-			<form action="<?php print $_SERVER['PHP_SELF']?>" method="GET">
+			<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']);?>" method="GET">
 				<label>Cipher:</label>
 				<select name="cipher">
 			<?php foreach($cipherList as $lkey => $value){ ?>

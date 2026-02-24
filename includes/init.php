@@ -98,15 +98,16 @@ function decode($text, $mode=2){
 }
 
 function genIV($blocksize){
-	$search = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_+{}|L:\"<>?[]\\l;',./`";
-	$iv = "";
-	for($i=0; $i<$blocksize; $i++)
-//		$iv.=$search[$i];
-		$iv .= "\0";
-	return $iv;
+	if(function_exists('random_bytes')) {
+		return random_bytes($blocksize);
+	}
+	return mcrypt_create_iv($blocksize, MCRYPT_DEV_URANDOM);
 }
 
 function genNonce($blocksize){
+	if(function_exists('random_bytes')) {
+		return bin2hex(random_bytes(($blocksize-1)/2 + 1));
+	}
 	$search = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_+{}|L:\"<>?[]\\l;',./`";
 	$nonce = "";
 	for($i=0; $i<$blocksize-1; $i++){
@@ -116,10 +117,13 @@ function genNonce($blocksize){
 	return $nonce;
 }
 function genKey($keysize){
+	if(function_exists('random_bytes')) {
+		return random_bytes(intval($keysize));
+	}
 	$search = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_+{}|L:\"<>?[]\\l;',./`";
 	$key = "";
 	for($i=0; $i<intval($keysize); $i++)
-		$key.= $search[$i % strlen($search)];
+		$key.= $search[mt_rand(0, strlen($search)-1)];
 	return $key;
 }
 

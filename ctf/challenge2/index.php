@@ -24,11 +24,13 @@ require("db.php");
 session_start();
 
 function checkAuth($username, $password){
-	$sql_check_auth = "SELECT * FROM challenge2_users WHERE username='$username' AND password='$password'";
+	$safe_username = mysql_real_escape_string($username);
+	$safe_password = mysql_real_escape_string($password);
+	$sql_check_auth = "SELECT * FROM challenge2_users WHERE username='$safe_username' AND password='$safe_password'";
 	$query_check_auth = mysql_query($sql_check_auth);
 	if(mysql_num_rows($query_check_auth) == 1){
 		$_SESSION['username'] = $username;
-		$_SESSION['password'] = $password;
+		$_SESSION['authenticated'] = true;
 		return true;
 	} else return false;
 }
@@ -46,8 +48,8 @@ if(!is_null(@$_POST['username']) && !is_null(@$_POST['password'])){
 	$username = htmlentities(@$_POST['username']);
 	$password = encode(encrypt(htmlentities(@$_POST['password']), $cipher, $mode, $key, $iv), 4);
 	$auth =checkAuth($username, $password);
-}elseif(!is_null(@$_SESSION['username']) && !is_null(@$_SESSION['password']))
-	$auth = checkAuth($_SESSION['username'], $_SESSION['password']);
+}elseif(!is_null(@$_SESSION['username']))
+	$auth = isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true;
 
 if(is_null($page))
 	$page = "articles";
@@ -71,7 +73,7 @@ elseif($auth == true && is_null(@$_GET['page'])){
 	<body>
 		
 <div id="settings">
-			<form action="<?php print $_SERVER['PHP_SELF']?>" method="GET">
+			<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']);?>" method="GET">
 				<label>Cipher:</label>
 				<select name="cipher">
 			<?php foreach($cipherList as $lkey => $value){ ?>
@@ -97,7 +99,7 @@ elseif($auth == true && is_null(@$_GET['page'])){
 		<br />
 <?php if($auth==false){ ?>
 	You may login as a guest using guest/guest as the username/password;
-	<form action="<?php print $_SERVER['PHP_SELF']."?cipher=$p_cipher&encoding=$p_encoding&ReturnUrl=".$return_url ?>" method="POST" autocomplete="off">
+	<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME'])."?cipher=".intval($p_cipher)."&encoding=".intval($p_encoding)."&ReturnUrl=".urlencode($return_url) ?>" method="POST" autocomplete="off">
 		  <fieldset style="width:250px;">
 			<legend><small>Enter your details:</small></legend>
 			<br />
@@ -129,13 +131,13 @@ elseif($auth == true && is_null(@$_GET['page'])){
 	<div id="content" style="margin-left: 200px; margin-top: -200px;">
 		<?php
 				if(!is_null(@$_GET['id']) && $page == "articles"){
-								$article_id = decrypt(decode(@$_GET['id'], $p_encoding), $cipher, $mode, $key, $iv);
+								$article_id = mysql_real_escape_string(decrypt(decode(@$_GET['id'], $p_encoding), $cipher, $mode, $key, $iv));
 								$sql_get_article = "SELECT * FROM challenge2_articles WHERE id='$article_id'";
-								$query_get_article = mysql_query($sql_get_article) or die(mysql_error());
+								$query_get_article = mysql_query($sql_get_article) or die("Database error");
 								if(mysql_num_rows($query_get_article)){
 									while($result = mysql_fetch_array($query_get_article)){
-										$title = $result['title'];
-										$body = $result['content'];
+										$title = htmlspecialchars($result['title']);
+										$body = htmlspecialchars($result['content']);
 										print "<h1>$title</h1>";
 										print $body;
 									}

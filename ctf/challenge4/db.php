@@ -25,7 +25,7 @@ $sql_create_table =  "CREATE TABLE IF NOT EXISTS challenge4_users (
 					username VARCHAR(32),
 					password VARCHAR(32),
 					email VARCHAR(64))";
-$query_create_table = mysql_query($sql_create_table) or die(mysql_error());
+$query_create_table = mysql_query($sql_create_table) or die("Database error");
 
 $sql_insert_data = "INSERT INTO challenge4_users (id, username, password, email)
 										VALUES(1, 'admin', '".

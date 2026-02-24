@@ -47,12 +47,14 @@ if(!is_null(@$cipherText)){
 	//$plainText2 = substr($plainText2, 16, strlen($plainText2));
 	$file = explode("|", $plainText);
 	$plainText2 = $file[sizeof($file)-1];
-	if($plainText2){
-		if(file_exists($plainText2) && !is_dir($plainText2)){
-			//$output = str_replace("\n", "<br />", file_get_contents($plainText2));
-			$theData = str_replace("\n", "<br />", file_get_contents($plainText2));
+	// Prevent path traversal: resolve real path and ensure it stays within allowed directory
+	$realPath = realpath($plainText2);
+	$allowedDir = realpath($directory);
+	if($plainText2 && $realPath && $allowedDir && strpos($realPath, $allowedDir) === 0){
+		if(file_exists($realPath) && !is_dir($realPath)){
+			$theData = str_replace("\n", "<br />", htmlspecialchars(file_get_contents($realPath)));
 			$fileName = explode("/", $plainText2);
-			$title = ucwords($fileName[sizeof($fileName)-1]);
+			$title = htmlspecialchars(ucwords($fileName[sizeof($fileName)-1]));
 			$heading = $title;
 		}
 		else{
@@ -75,7 +77,7 @@ if(!is_null(@$cipherText)){
 	</head>
 	<body>
 		<div id="settings">
-			<form action="<?php print $_SERVER['PHP_SELF']?>" method="GET">
+			<form action="<?php print htmlspecialchars($_SERVER['SCRIPT_NAME']);?>" method="GET">
 				<label>Cipher:</label>
 				<select name="cipher">
 			<?php foreach($cipherList as $lkey => $value){ ?>
